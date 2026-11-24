@@ -157,7 +157,7 @@ import {initializeApp} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-
 import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
 import {getFirestore,collection,doc,onSnapshot,setDoc,deleteDoc,writeBatch} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
 const app=initializeApp({apiKey:"AIzaSyDtxId5OzGPfGlOtxVQiYNE_NH1YDlimu0",authDomain:"kt-wiz-park.firebaseapp.com",projectId:"kt-wiz-park",storageBucket:"kt-wiz-park.firebasestorage.app",messagingSenderId:"951003812887",appId:"1:951003812887:web:f0a4e218b998e3151bf852"});
-const auth=getAuth(app),db=getFirestore(app),col=collection(db,'products');
+const auth=getAuth(app),db=getFirestore(app,'default'),col=collection(db,'products');
 let ids=[],ready=false,initialized=false,draft=false;
 const status=t=>$('cloudStatus').textContent=t;
 $('manage').hidden=false;
