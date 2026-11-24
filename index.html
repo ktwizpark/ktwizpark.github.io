@@ -93,10 +93,10 @@ footer{background:#101010;color:#aaa;padding:30px 0;font-size:11px}footer strong
       <div class="form-row"><div class="field"><label for="model">희망 상품 *</label><select id="model" required><option value="">기종을 선택하세요</option><option>갤럭시 S26</option><option>갤럭시 Z 폴드</option><option>갤럭시 Z 플립</option><option>아이폰 17</option><option>기타 / 추천 희망</option><option>인터넷·TV</option></select></div><div class="field"><label for="carrier">현재 통신사</label><select id="carrier"><option>KT</option><option>SKT</option><option>LG U+</option><option>알뜰폰</option><option>신규가입</option><option>잘 모르겠음</option></select></div></div>
       <div class="form-row"><div class="field"><label for="type">상담 유형</label><select id="type"><option>기기변경</option><option>번호이동</option><option>신규가입</option><option>요금제 상담</option><option>기타 문의</option></select></div><div class="field"><label for="time">연락 희망 시간</label><select id="time"><option>가능한 빠른 시간</option><option>오전</option><option>오후</option><option>저녁</option></select></div></div>
       <div class="field"><label for="memo">추가 문의사항</label><textarea id="memo" rows="3" maxlength="300" placeholder="원하는 용량, 색상, 예산 등"></textarea></div>
-      <label class="consent"><input id="agree" type="checkbox" required><span><strong>[필수] 개인정보 수집·이용 동의</strong><br>상담 예약 및 연락을 위해 이름과 연락처 등 입력 정보를 이용하는 데 동의합니다. 실제 운영 전 개인정보 처리방침, 수집 항목·목적·보유 기간·동의 거부권을 확정해 고지해야 합니다.</span></label>
-      <button class="btn" type="submit">상담 예약 내용 전달하기</button>
-      <div class="form-hint">현재 무료 시범 버전은 입력 내용을 문자 앱에 전달하는 방식입니다. 고객이 문자 앱에서 전송을 완료해야 매장에 접수됩니다. 자동 접수·고객 목록 관리를 원하면 Google Forms 연결이 필요합니다.</div>
-    </form>
+      <label class="consent"><input id="agree" type="checkbox" required><span><strong>[필수] 개인정보 수집·이용 동의</strong><br>상담 예약 및 연락을 위해 이름과 연락처 등 입력 정보를 이용하는 데 동의합니다. 수집 항목: 이름, 연락처, 희망 상품, 통신사, 상담 유형, 연락 희망 시간, 문의사항. 보유 기간: 상담 종료 후 30일 이내 삭제(법령상 보존 의무 제외). 동의를 거부할 수 있으며, 거부 시 온라인 상담 신청이 제한됩니다. 주민등록번호 등 민감한 정보는 입력하지 마세요.</span></label>
+      <button class="btn" type="submit">상담 예약 신청하기</button>
+      <div class="form-hint">신청 완료 메시지가 표시되면 매장에 접수됩니다.</div>
+    <p id="bookingResult" role="status" aria-live="polite"></p></form>
   </div>
 </div></section>
 
@@ -124,14 +124,6 @@ document.getElementById('phone').addEventListener('input',e=>{
   else if(v.length>3)v=v.slice(0,3)+'-'+v.slice(3);
   e.target.value=v;
 });
-document.getElementById('bookingForm').addEventListener('submit',e=>{
-  e.preventDefault();
-  if(!document.getElementById('agree').checked){alert('개인정보 수집·이용 동의가 필요합니다.');return;}
-  const v=id=>document.getElementById(id).value.trim();
-  const msg=`[KT위즈파크점 상담 예약]\\n이름: ${v('name')}\\n연락처: ${v('phone')}\\n희망 기종: ${v('model')}\\n현재 통신사: ${v('carrier')}\\n상담 유형: ${v('type')}\\n연락 희망 시간: ${v('time')}\\n문의: ${v('memo')}`;
-  const url='sms:0312513016?body='+encodeURIComponent(msg);
-  window.location.href=url;
-});
 document.getElementById('calculate').addEventListener('click',()=>{const ids=['retail','discount','months','rate','monthlyPlan'];const fields=ids.map(id=>document.getElementById(id));if(fields.some(f=>f.value===''||!f.checkValidity())){alert('모든 금액과 조건을 올바르게 입력해 주세요.');return;}const [p,d,n,r,m]=fields.map(f=>Number(f.value));if(d>p){alert('단말 할인은 출고가를 초과할 수 없습니다.');return;}const principal=p-d;const i=r/1200;const payment=i===0?principal/n:principal*i/(1-Math.pow(1+i,-n));const won=x=>Math.round(x).toLocaleString('ko-KR')+'원';document.getElementById('principal').textContent=won(principal);document.getElementById('installment').textContent=won(payment);document.getElementById('total').textContent=won(payment+m);});</script>
 <script>
 const $=id=>document.getElementById(id), catalog=JSON.parse($('catalog').textContent);let selected=0,filter='all';const money=n=>n===null?'상담 시 확인':Number(n).toLocaleString('ko-KR')+'원';
@@ -148,7 +140,7 @@ render();
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
 import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
-import {getFirestore,collection,doc,onSnapshot,setDoc,deleteDoc,writeBatch} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
+import {getFirestore,collection,doc,onSnapshot,setDoc,deleteDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
 const app=initializeApp({apiKey:"AIzaSyDtxId5OzGPfGlOtxVQiYNE_NH1YDlimu0",authDomain:"kt-wiz-park.firebaseapp.com",projectId:"kt-wiz-park",storageBucket:"kt-wiz-park.firebasestorage.app",messagingSenderId:"951003812887",appId:"1:951003812887:web:f0a4e218b998e3151bf852"});
 const auth=getAuth(app),db=getFirestore(app,'default'),col=collection(db,'products');
 let ids=[],ready=false,initialized=false,draft=false;
@@ -181,4 +173,12 @@ $('homeFile').onchange=()=>{const f=$('homeFile').files[0];if(!f)return;if(f.siz
 $('homeSave').onclick=async()=>{try{if(!auth.currentUser||!homeReady)throw Error('로그인 및 연결 확인');const p={};hf.forEach(k=>{const v=$('home_'+k).value.trim();p[k]=['monthly','bundle','cash'].includes(k)?v===''?null:Number(v):v});if(!p.name||['monthly','bundle','cash'].some(k=>p[k]!==null&&(!Number.isSafeInteger(p[k])||p[k]<0)))throw Error('상품명과 금액을 확인하세요.');if((p.cash!==null||p.gift)&&!p.condition)throw Error('사은품 지급 조건을 입력하세요.');if(p.image&&!safeURL(p.image)&&!/^data:image\/(jpeg|png|webp);base64,/.test(p.image))throw Error('사진 주소를 확인하세요.');if(new TextEncoder().encode(JSON.stringify(p)).length>900000)throw Error('사진 용량을 줄여주세요.');const id=$('homeSelect').value||'_home_'+doc(col).id;await setDoc(doc(col,id),p);homeEdit(id);hs('저장 완료');}catch(e){hs('저장 실패: '+e.message)}};
 $('homeDelete').onclick=async()=>{try{const id=$('homeSelect').value;if(!auth.currentUser||!homeReady||!id||!id.startsWith('_home_'))return;if(confirm('인터넷·TV 상품을 삭제할까요?')){await deleteDoc(doc(col,id));homeEdit();hs('삭제 완료')}}catch(e){hs('삭제 실패: '+e.message)}};
 homeRender();
+const bookings=collection(db,'bookings');
+const states=['신규 접수','상담 진행 중','방문 예약','부재중','개통 완료','상담 취소'];
+const crm=el('section');crm.hidden=true;crm.style.display='none';crm.className='wrap';crm.innerHTML=`<h2>고객 상담 관리</h2><p id="crmStatus" role="status"></p><input id="crmSearch" placeholder="고객명 / 연락처 / 상품 검색"><select id="crmFilter"><option>전체</option>${states.map(x=>'<option>'+x+'</option>').join('')}</select><div id="crmList"></div>`;$('admin').append(crm);
+let records=[],stopCRM=null;
+function crmRender(){const list=$('crmList');list.replaceChildren();const q=$('crmSearch').value.trim().toLowerCase(),f=$('crmFilter').value;const shown=records.filter(r=>(f==='전체'||r.p.status===f)&&[r.p.name,r.p.phone,r.p.model].join(' ').toLowerCase().includes(q));$('crmStatus').textContent='전체 '+records.length+'건 / 신규 '+records.filter(r=>r.p.status===states[0]).length+'건 / 검색 '+shown.length+'건';for(const {id,p} of shown){const c=el('article',undefined,'plan');c.append(el('h3',p.name+' · '+p.model),el('p',p.phone),el('p',[p.carrier,p.type,p.time].join(' / ')),el('p',p.memo),el('p',p.createdAt?.toDate?.().toLocaleString('ko-KR')||''));const call=el('a','전화 연결','btn');call.href='tel:'+p.phone.replace(/[^0-9]/g,'');c.append(call);const st=el('select');states.forEach(x=>st.add(new Option(x)));st.value=p.status;const note=el('textarea');note.placeholder='관리자 상담 메모';note.value=p.adminMemo||'';const owner=el('input');owner.placeholder='담당 직원';owner.value=p.owner||'';const next=el('input');next.type='date';next.value=p.next||'';const visit=el('input');visit.type='date';visit.value=p.visit||'';const save=el('button','상담 정보 저장','btn');save.onclick=async()=>{try{await setDoc(doc(bookings,id),{status:st.value,adminMemo:note.value,owner:owner.value,next:next.value,visit:visit.value},{merge:true});alert('저장 완료')}catch(e){alert('저장 실패: '+e.code)}};const del=el('button','고객 삭제','btn');del.onclick=async()=>{if(confirm('상담 정보를 영구 삭제할까요?'))try{await deleteDoc(doc(bookings,id))}catch(e){alert('삭제 실패: '+e.code)}};c.append(st,note,owner,el('label','재연락 예정일'),next,el('label','방문 예약일'),visit,save,del);list.append(c)}}
+$('crmSearch').oninput=crmRender;$('crmFilter').onchange=crmRender;
+onAuthStateChanged(auth,u=>{if(stopCRM)stopCRM();stopCRM=null;records=[];$('crmList').replaceChildren();crm.hidden=!u;crm.style.display=u?'':'none';if(u)stopCRM=onSnapshot(bookings,s=>{records=s.docs.map(d=>({id:d.id,p:d.data()})).sort((a,b)=>(b.p.createdAt?.seconds||0)-(a.p.createdAt?.seconds||0));crmRender()},e=>{$('crmStatus').textContent='고객 관리 연결 실패: '+e.code})});
+$('bookingForm').addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget,b=form.querySelector('button[type=submit]'),out=$('bookingResult');if(b.disabled)return;const p={};for(const k of ['name','phone','model','carrier','type','time','memo'])p[k]=$(k).value.trim();if(!p.name||!/^01[016789][0-9]{7,8}$/.test(p.phone.replace(/-/g,''))||!p.model||!$('agree').checked){out.textContent='이름, 휴대폰 번호, 상품 및 동의를 확인하세요.';return}b.disabled=true;out.textContent='접수 중…';try{await setDoc(doc(bookings),{...p,consent:true,status:'신규 접수',createdAt:serverTimestamp()});form.reset();out.textContent='상담 예약이 접수되었습니다. 매장에서 연락드리겠습니다.'}catch(err){out.textContent='접수 실패: '+err.code+' / 매장 전화 031-251-3016'}finally{b.disabled=false}});
 </script></body></html>
